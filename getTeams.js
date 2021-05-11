@@ -17,7 +17,7 @@ const textBetweenParens = (string) => {
   return string.match(re)[1]
 }
 
-const divider = async() => {
+const divider = async () => {
   console.log('-------------------------------------------------------')
 }
 
@@ -32,39 +32,66 @@ const getTeamGames = async (teamSlug) => {
   const html = await axios.get(url)
   const $ = await cheerio.load(html.data)
 
-
   rawSeasonRows = $('tr')
   console.log(`Seasons: ${seasonsList.length}`)
   console.log(`ScoreRows: ${rawSeasonRows.length}`)
 
-
   // console.log('rawSeasonRows:',(rawSeasonRows.length-9)/20)
   console.log(`=======================================================`)
 
+  const games = []
 
-
-  const r = 6
   const c = 1
 
-  for(let x = 0; x <4; x++){
-    const teamSeasonData = {teamSlug}
-    teamSeasonData.season = $($(rawSeasonRows[r+0]).find('td')[c+x]).text()
-    teamSeasonData.teamName = $($(rawSeasonRows[r+1]).find('td')[c+x]).text()
-    teamSeasonData.teamMascot = $($(rawSeasonRows[r+2]).find('td')[c+x]).text()
-    console.log(teamSeasonData)
-    console.log($($(rawSeasonRows[r+4]).find('td')[c+x]).text())
+  for (season_group = 0; season_group < (rawSeasonRows.length - 9) / 20; season_group++) {
+    for (let season_col = 1; season_col < 5; season_col++) {
+
+      const season = parseInt($(
+        $(rawSeasonRows[6 + season_group * 20 + 0]).find('td')[season_col]
+      ).text())
+
+      if(!isNaN(season)){
+
+        teamName = cleanText(
+          $($(rawSeasonRows[6 + season_group * 20 + 1]).find('td')[season_col]).text()
+        )
+        teamMascot = cleanText(
+          $($(rawSeasonRows[6 + season_group * 20 + 2]).find('td')[season_col]).text()
+        )
+
+        const teamGames = {
+          teamSlug,
+          season,
+          teamName,
+          teamMascot
+        }
+        gamesData = []
+        console.log(`Season: ${season}`)
+        for(let week=1; week<21; week++){
+          console.log(`[season_group: ${season_group}, season_col: ${season_col}, week: ${week}]`)
+          const teamGameData = {}
+          teamGameData.teamSlug = teamSlug
+          teamGameData.season = season
+          teamGameData.gameWeek = week
+
+
+          console.log(`==> Week: ${week}`)
+          console.log(teamGameData)
+
+          divider()
+
+
+
+
+        }
+        console.log(`=======================================================`)
+      }
+
+    }
   }
-
-
-
-
-  // return teamGames
-
-
 }
 
 const getTeamSeasons = async (teamSlug) => {
-
   const url = `${BASE_URL}/Teams/${teamSlug}_Standings.htm`
   const teamSeasons = []
 
@@ -101,7 +128,7 @@ const getTeamSeasons = async (teamSlug) => {
   }
 
   divider()
-  const teamGames = await getTeamGames(teamSlug,seasonsList)
+  const teamGames = await getTeamGames(teamSlug, seasonsList)
 
   return teamSeasons
 }
@@ -135,7 +162,6 @@ const getSchoolInfo = async (teamSlug) => {
 }
 
 const getTeams = async () => {
-
   let teams = []
 
   const html = await axios.get(`${BASE_URL}/Teams/index.htm`)
@@ -147,8 +173,8 @@ const getTeams = async () => {
   /* DELETE THIS! */
   for (let i = 0; i < 1 /* teamsList.length */; i++) {
     let teamData = []
-    const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
-    // const teamSlug = `Hickoryflat`
+    // const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
+    const teamSlug = `Aberdeen`
 
     teamData.teamSlug = teamSlug
 
@@ -160,31 +186,6 @@ const getTeams = async () => {
 
     teams.push(teamData)
   }
-  // console.log(teams)
-
-  /*
-  teamsList.each((idx, ele) => {
-    let team = {}
-
-    team.teamSlug = cleanText($(ele).attr('href').split('.')[0])
-    teams.push(team)
-  })
-  console.log(typeof teamsList[0])
-  */
-
-  /*
-  const data = JSON.stringify(teams)
-
-  // write file to disk
-  fs.writeFile('data.json', data, 'utf8', (err) => {
-    if (err) {
-      console.log(`Error writing file: ${err}`)
-    } else {
-      console.log(`File is written successfully!`)
-    }
-  })
-  */
-
 
 }
 
