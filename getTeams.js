@@ -3,7 +3,6 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 
 const fs = require('fs')
-const { clear } = require('console')
 
 const cleanText = (string) => {
   return string.replace('\n', '').replace('  ', ' ')
@@ -21,13 +20,12 @@ const divider = async () => {
   console.log('-------------------------------------------------------')
 }
 
-const getTeamGames = async (teamSlug) => {
+const getTeamGames = async (teamSlug, teamSeasons) => {
   const url = `${BASE_URL}/Teams/${teamSlug}_Scores.htm`
-  console.log(url)
+  const teamGames = []
+
   divider()
   console.log('=====================Getting Games=====================')
-
-  const teamGames = []
 
   const html = await axios.get(url)
   const $ = await cheerio.load(html.data)
@@ -35,60 +33,71 @@ const getTeamGames = async (teamSlug) => {
   rawSeasonRows = $('tr')
   console.log(`Seasons: ${seasonsList.length}`)
   console.log(`ScoreRows: ${rawSeasonRows.length}`)
+  console.log(`SeasonGroups: ${(rawSeasonRows.length - 9) / 20}`)
 
-  // console.log('rawSeasonRows:',(rawSeasonRows.length-9)/20)
   console.log(`=======================================================`)
 
-  const games = []
 
-  const c = 1
+  for(let group = 0; group < (rawSeasonRows.length - 9) / 20; group++){
 
-  for (season_group = 0; season_group < (rawSeasonRows.length - 9) / 20; season_group++) {
-    for (let season_col = 1; season_col < 5; season_col++) {
+    const team_season = {}
 
-      const season = parseInt($(
-        $(rawSeasonRows[6 + season_group * 20 + 0]).find('td')[season_col]
-      ).text())
+    for(let szn = 1; szn < 5; szn++){
+      teamSeason = parseInt($($(rawSeasonRows[(group * 20) + 6]).find('td')[szn]).text())
 
-      if(!isNaN(season)){
+      if(!isNaN(teamSeason)){
 
-        teamName = cleanText(
-          $($(rawSeasonRows[6 + season_group * 20 + 1]).find('td')[season_col]).text()
-        )
-        teamMascot = cleanText(
-          $($(rawSeasonRows[6 + season_group * 20 + 2]).find('td')[season_col]).text()
-        )
+        var result = teamSeasons.filter(obj => {
+          return obj.season === teamSeason
+        })
 
-        const teamGames = {
-          teamSlug,
-          season,
-          teamName,
-          teamMascot
+        team_season.teamSeason = teamSeason
+        team_season.teamSeasonName = cleanText($($(rawSeasonRows[(group * 20) + 7]).find('td')[szn]).text())
+        team_season.teamSeasonMascot = cleanText($($(rawSeasonRows[(group * 20) + 8]).find('td')[szn]).text())
+        team_season.teamSeasonDivision = result[0].division
+
+        console.log(team_season)
+        divider()
+
+        for (let gm_wk = 0; gm_wk < 16; gm_wk++){
+
+         const raw_game=[]
+         for(let c = 1; c <=7; c++){
+            const cell_data = $($(rawSeasonRows[(group * 20) + 10 + gm_wk]).find('td')[c + ((szn-1)*7)]).text()
+            raw_game.push(cell_data)
+          }
+
+          const team_game = {
+            teamSlug,
+            teamGameName: cleanText($($(rawSeasonRows[(group * 20) + 7]).find('td')[szn]).text()),
+            teamSeasonMascot: cleanText($($(rawSeasonRows[(group * 20) + 8]).find('td')[szn]).text()),
+            gameSeason: teamSeason,
+            gameWeek: gm_wk + 1,
+            gameDate: cleanText(raw_game[0]),
+            gameLoc: cleanText(raw_game[1]) == ' ' ? '' : cleanText(raw_game[1]),
+            gameOpponent: cleanText(raw_game[2]) == ' ' ? '' : cleanText(raw_game[2]),
+            gameDivision: cleanText(raw_game[3]) == ' ' ? false : true,
+            gameResult: cleanText(raw_game[4]) == ' ' ? '' : cleanText(raw_game[4]),
+            gamePF: parseInt(raw_game[5]),
+            gamePA: parseInt(raw_game[6]),
+          }
+          if((team_game.gameOpponent !== '' && team_game.gameOpponent !== 'open' )){
+
+            teamGames.push(team_game)
+
+          }
+
         }
-        gamesData = []
-        console.log(`Season: ${season}`)
-        for(let week=1; week<21; week++){
-          console.log(`[season_group: ${season_group}, season_col: ${season_col}, week: ${week}]`)
-          const teamGameData = {}
-          teamGameData.teamSlug = teamSlug
-          teamGameData.season = season
-          teamGameData.gameWeek = week
 
-
-          console.log(`==> Week: ${week}`)
-          console.log(teamGameData)
-
-          divider()
-
-
-
-
-        }
-        console.log(`=======================================================`)
       }
 
     }
+    // console.log(teamGames)
+
+
+
   }
+
 }
 
 const getTeamSeasons = async (teamSlug) => {
@@ -121,14 +130,14 @@ const getTeamSeasons = async (teamSlug) => {
   for (let i = 0; i < seasonsList.length; i++) {
     let teamSeason = {}
     teamSeason.teamSlug = teamSlug
-    teamSeason.season = seasonsList[i]
-    teamSeason.division = divisionsList[i]
+    teamSeason.season = parseInt(seasonsList[i])
+    teamSeason.division = cleanText(divisionsList[i])
 
     teamSeasons.push(teamSeason)
   }
 
   divider()
-  const teamGames = await getTeamGames(teamSlug, seasonsList)
+  const teamGames = await getTeamGames(teamSlug, teamSeasons)
 
   return teamSeasons
 }
@@ -174,7 +183,7 @@ const getTeams = async () => {
   for (let i = 0; i < 1 /* teamsList.length */; i++) {
     let teamData = []
     // const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
-    const teamSlug = `Aberdeen`
+    const teamSlug = `Hickoryflat`
 
     teamData.teamSlug = teamSlug
 
@@ -186,7 +195,6 @@ const getTeams = async () => {
 
     teams.push(teamData)
   }
-
 }
 
 getTeams()
