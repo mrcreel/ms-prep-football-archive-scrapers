@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.16.0",
     "axios": "^0.21.1",
     "cheerio": "*",
     "express": "^4.17.1"

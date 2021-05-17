@@ -4,6 +4,10 @@ const cheerio = require('cheerio')
 
 const fs = require('fs')
 
+const writeJson = () => {}
+
+require('./aws')
+
 const cleanText = (string) => {
   return string.replace('\n', '').replace('  ', ' ')
 }
@@ -24,8 +28,8 @@ const getTeamGames = async (teamSlug, teamSeasons) => {
   const url = `${BASE_URL}/Teams/${teamSlug}_Scores.htm`
   const teamGames = []
 
-  divider()
-  console.log('=====================Getting Games=====================')
+  console.log('-------------------------------------------------------')
+  console.log(`______________________getTeamGame______________________`)
 
   const html = await axios.get(url)
   const $ = await cheerio.load(html.data)
@@ -93,6 +97,7 @@ const getTeamGames = async (teamSlug, teamSeasons) => {
 
     }
     // console.log(teamGames)
+    // return teamGames
 
 
 
