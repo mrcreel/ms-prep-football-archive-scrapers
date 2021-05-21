@@ -9,10 +9,9 @@ const writeJson = () => {}
 require('./aws')
 
 const cleanText = (string) => {
-  return string.replace('\n', '').replace('  ', ' ')
+  return string.replace('\n', '').replace('\r', '').replace('  ', ' ')
 }
 
-const footballData = []
 const BASE_URL = `http://misshsfootball.com`
 
 const textBetweenParens = (string) => {
@@ -41,68 +40,100 @@ const getTeamGames = async (teamSlug, teamSeasons) => {
 
   console.log(`=======================================================`)
 
+  const seasons = []
 
-  for(let group = 0; group < (rawSeasonRows.length - 9) / 20; group++){
+  for (let group = 0; group < (rawSeasonRows.length - 9) / 20; group++) {
+    for (let szn = 1; szn < 5; szn++) {
+      const team_season = {}
 
-    const team_season = {}
+      teamSeason = parseInt(
+        $($(rawSeasonRows[group * 20 + 6]).find('td')[szn]).text()
+      )
 
-    for(let szn = 1; szn < 5; szn++){
-      teamSeason = parseInt($($(rawSeasonRows[(group * 20) + 6]).find('td')[szn]).text())
-
-      if(!isNaN(teamSeason)){
-
-        var result = teamSeasons.filter(obj => {
+      if (!isNaN(teamSeason)) {
+        var result = teamSeasons.filter((obj) => {
           return obj.season === teamSeason
         })
 
         team_season.teamSeason = teamSeason
-        team_season.teamSeasonName = cleanText($($(rawSeasonRows[(group * 20) + 7]).find('td')[szn]).text())
-        team_season.teamSeasonMascot = cleanText($($(rawSeasonRows[(group * 20) + 8]).find('td')[szn]).text())
+
+        console.log(teamSeason)
+
+        team_season.teamSeasonName = cleanText(
+          $($(rawSeasonRows[group * 20 + 7]).find('td')[szn]).text()
+        )
+        team_season.teamSeasonMascot = cleanText(
+          $($(rawSeasonRows[group * 20 + 8]).find('td')[szn]).text()
+        )
         team_season.teamSeasonDivision = result[0].division
 
-        console.log(team_season)
-        divider()
+        seasons.push(team_season)
 
-        for (let gm_wk = 0; gm_wk < 16; gm_wk++){
-
-         const raw_game=[]
-         for(let c = 1; c <=7; c++){
-            const cell_data = $($(rawSeasonRows[(group * 20) + 10 + gm_wk]).find('td')[c + ((szn-1)*7)]).text()
+        for (let gm_wk = 0; gm_wk < 16; gm_wk++) {
+          const raw_game = []
+          for (let c = 1; c <= 7; c++) {
+            const cell_data = $(
+              $(rawSeasonRows[group * 20 + 10 + gm_wk]).find('td')[
+                c + (szn - 1) * 7
+              ]
+            ).text()
             raw_game.push(cell_data)
           }
 
           const team_game = {
             teamSlug,
-            teamGameName: cleanText($($(rawSeasonRows[(group * 20) + 7]).find('td')[szn]).text()),
-            teamSeasonMascot: cleanText($($(rawSeasonRows[(group * 20) + 8]).find('td')[szn]).text()),
+            teamGameName: cleanText(
+              $($(rawSeasonRows[group * 20 + 7]).find('td')[szn]).text()
+            ),
+            teamSeasonMascot: cleanText(
+              $($(rawSeasonRows[group * 20 + 8]).find('td')[szn]).text()
+            ),
             gameSeason: teamSeason,
             gameWeek: gm_wk + 1,
-            gameDate: cleanText(raw_game[0]),
-            gameLoc: cleanText(raw_game[1]) == ' ' ? '' : cleanText(raw_game[1]),
-            gameOpponent: cleanText(raw_game[2]) == ' ' ? '' : cleanText(raw_game[2]),
+            gameDate: cleanText(raw_game[0]) == ' ' ? '' : cleanText(raw_game[0]),
+            gameLoc:
+              cleanText(raw_game[1]) == ' ' ? '' : cleanText(raw_game[1]),
+            gameOpponent:
+              cleanText(raw_game[2]) == ' ' ? '' : cleanText(raw_game[2]),
             gameDivision: cleanText(raw_game[3]) == ' ' ? false : true,
-            gameResult: cleanText(raw_game[4]) == ' ' ? '' : cleanText(raw_game[4]),
+            gameResult:
+              cleanText(raw_game[4]) == ' ' ? '' : cleanText(raw_game[4]),
             gamePF: parseInt(raw_game[5]),
             gamePA: parseInt(raw_game[6]),
           }
-          if((team_game.gameOpponent !== '' && team_game.gameOpponent !== 'open' )){
-
+          if (
+            team_game.gameOpponent !== '' &&
+            team_game.gameOpponent !== 'open'
+          ) {
             teamGames.push(team_game)
-
           }
-
         }
-
       }
-
     }
-    // console.log(teamGames)
-    // return teamGames
-
-
-
   }
 
+  // convert JSON object to a string
+  const seasonsData = JSON.stringify(seasons)
+
+  fs.writeFile('data/seasons.json', seasonsData, 'utf8', (err) => {
+    if (err) {
+      console.log(`Error writing file: ${err}`)
+    } else {
+      // console.log(seasonsData)
+      console.log(`File is written successfully!`)
+    }
+  })
+
+  const gamesData = JSON.stringify(teamGames)
+
+  fs.writeFile('data/games.json', gamesData, 'utf8', (err) => {
+    if (err) {
+      console.log(`Error writing file: ${err}`)
+    } else {
+      // console.log(gamesData)
+      console.log(`File is written successfully!`)
+    }
+  })
 }
 
 const getTeamSeasons = async (teamSlug) => {
@@ -151,13 +182,11 @@ const getSchoolInfo = async (teamSlug) => {
   const schoolInfo = {}
 
   schoolInfo.teamSlug = teamSlug
-  schoolInfo.schoolLink = `${BASE_URL}/Teams/${teamSlug}.htm`
 
   const html = await axios.get(`${BASE_URL}/Teams/${teamSlug}.htm`)
   const $ = await cheerio.load(html.data)
 
   schoolInfo.schoolAffiliation = cleanText($($(`td[colspan=56]`)[0]).text())
-  schoolInfo.schoolLocation = cleanText($($(`td[colspan=56]`)[1]).text())
   schoolInfo.schoolTown = cleanText($($(`td[colspan=56]`)[1]).text()).split(
     ','
   )[0]
@@ -165,11 +194,13 @@ const getSchoolInfo = async (teamSlug) => {
     .split(',')[1]
     .trim()
     .replace(' County', '')
-  schoolInfo.schoolType = cleanText($($(`td[colspan=56]`)[2]).text())
+
+
+ const schoolType = cleanText($($(`td[colspan=56]`)[2]).text())
 
   const paren = /\(/g
-  if (schoolInfo.schoolType.match(paren) != null) {
-    schoolInfo.schoolDistrict = textBetweenParens(schoolInfo.schoolType)
+  if (schoolType.match(paren) != null) {
+    schoolInfo.schoolDistrict = textBetweenParens(schoolType)
   }
 
   return schoolInfo
@@ -184,22 +215,36 @@ const getTeams = async () => {
 
   let teamsList = $('td[colspan=8] a')
 
-  /* DELETE THIS! */
-  for (let i = 0; i < 1 /* teamsList.length */; i++) {
-    let teamData = []
-    // const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
-    const teamSlug = `Hickoryflat`
+  const schoolsData = []
 
-    teamData.teamSlug = teamSlug
+  /* DELETE THIS! */
+  for (let i = 0; i < 10 /* teamsList.length */; i++) {
+    let teamData = []
+    const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
+    // const teamSlug = `Stone`
 
     const schoolInfo = await getSchoolInfo(teamSlug)
-    teamData.push(schoolInfo)
+    schoolsData.push(schoolInfo)
 
-    const teamSeasons = await getTeamSeasons(teamSlug)
-    teamData.push(teamSeasons)
+
+    // const teamSeasons = await getTeamSeasons(teamSlug)
+    // teamData.push(teamSeasons)
+
 
     teams.push(teamData)
   }
+
+  const schools_data = JSON.stringify(schoolsData)
+
+  fs.writeFile('data/schools.json', schools_data, 'utf8', (err) => {
+    if (err) {
+      console.log(`Error writing file: ${err}`)
+    } else {
+      console.log(schools_data)
+      console.log(`File is written successfully!`)
+    }
+  })
+
 }
 
 getTeams()
