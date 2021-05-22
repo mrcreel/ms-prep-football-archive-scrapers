@@ -187,9 +187,7 @@ const getSchoolInfo = async (teamSlug) => {
   const $ = await cheerio.load(html.data)
 
   schoolInfo.schoolAffiliation = cleanText($($(`td[colspan=56]`)[0]).text())
-  schoolInfo.schoolTown = cleanText($($(`td[colspan=56]`)[1]).text()).split(
-    ','
-  )[0]
+  schoolInfo.schoolTown = cleanText($($(`td[colspan=56]`)[1]).text()).split(',')[0]
   schoolInfo.schoolCounty = cleanText($($(`td[colspan=56]`)[1]).text())
     .split(',')[1]
     .trim()

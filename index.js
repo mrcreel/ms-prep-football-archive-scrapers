@@ -32,14 +32,15 @@ const getSchools = async () => {
 
     const schoolCells = $('td[colspan=8] a')
 
-    for (let i = 0; i < schoolCells.length  ; i++) {
+    for (let i = 0; i < 5  /*schoolCells.length*/   ; i++) {
       const schoolInfo = {}
       const schoolSlug = cleanText($(schoolCells[i]).attr('href').split('.')[0])
       schoolInfo.schoolSlug = schoolSlug
 
-
       const schoolInfoArray = await getSchoolInfo(schoolSlug)
+
       schoolInfo.schoolAffiliation = schoolInfoArray[0]
+      schoolInfo.schoolCity = schoolInfoArray[1]
       console.log(schoolInfo)
       schoolsArray.push(schoolInfo)
     }
@@ -56,7 +57,13 @@ const getSchoolInfo = async (schoolSlug) => {
 
   const $ = await getData(page)
 
-  schoolInfoArray.push(cleanText($($(`td[colspan=56]`)[0]).text().split(' (')[0].trim()))
+  const schoolLocation = cleanText($($(`td[colspan=56]`)[1]).text())
+  console.log(schoolLocation)
+  const schoolCity = cleanText(schoolLocation.split(',')[0])
+  console.log(schoolCity)
+
+  schoolInfoArray.push(cleanText($($(`td[colspan=56]`)[0]).text().split(' (')[0]))
+  schoolInfoArray.push(schoolCity)
   console.log(schoolInfoArray)
 
   return schoolInfoArray

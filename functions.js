@@ -13,7 +13,7 @@ const writeArrayToJson = (array, file)=> {
 }
 
 const cleanText = (string) => {
-  return string.replace('\n', '').replace('\r', '').replace('  ', ' ')
+  return string.replace('\n', '').replace('\r', '').replace('  ', ' ').trim()
 }
 
 const divider = async () => {
