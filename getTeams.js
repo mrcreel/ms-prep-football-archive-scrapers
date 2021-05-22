@@ -206,10 +206,10 @@ const getSchoolInfo = async (teamSlug) => {
   return schoolInfo
 }
 
-const getTeams = async () => {
+const getTeams = async (page) => {
   let teams = []
 
-  const html = await axios.get(`${BASE_URL}/Teams/index.htm`)
+  const html = await axios.get(`${BASE_URL}/Teams/${page}`)
   // const html = await axios.get(`${BASE_URL}/Teams/Inactive.htm`)
   let $ = await cheerio.load(html.data)
 
@@ -218,7 +218,7 @@ const getTeams = async () => {
   const schoolsData = []
 
   /* DELETE THIS! */
-  for (let i = 0; i < 10 /* teamsList.length */; i++) {
+  for (let i = 0; i < 5 /*teamsList.length*/ ; i++) {
     let teamData = []
     const teamSlug = cleanText($(teamsList[i]).attr('href').split('.')[0])
     // const teamSlug = `Stone`
@@ -247,4 +247,4 @@ const getTeams = async () => {
 
 }
 
-getTeams()
+getTeams('index.htm')
