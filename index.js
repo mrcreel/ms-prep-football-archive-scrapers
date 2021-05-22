@@ -28,19 +28,18 @@ const getData = async (page) => {
 const getSchools = async () => {
   const schoolsArray = []
   for (const page of pages) {
-    let $ = await getData(page);
-    console.log(`${BASE_URL}${page}`)
+    let $ = await getData(page)
 
     const schoolCells = $('td[colspan=8] a')
 
-    for (let i = 0; i < 1/* schoolCells.length */ ; i++) {
+    for (let i = 0; i < schoolCells.length  ; i++) {
       const schoolInfo = {}
       const schoolSlug = cleanText($(schoolCells[i]).attr('href').split('.')[0])
       schoolInfo.schoolSlug = schoolSlug
 
-      console.log(`${BASE_URL}/Teams/${schoolSlug}.htm`)
 
-
+      const schoolInfoArray = await getSchoolInfo(schoolSlug)
+      schoolInfo.schoolAffiliation = schoolInfoArray[0]
       console.log(schoolInfo)
       schoolsArray.push(schoolInfo)
     }
@@ -49,5 +48,20 @@ const getSchools = async () => {
   }
   console.log(schoolsArray)
   writeArrayToJson(schoolsArray, `schools`)
-};
+}
+
+const getSchoolInfo = async (schoolSlug) => {
+  const schoolInfoArray = []
+  const page = `/Teams/${schoolSlug}.htm`
+
+  const $ = await getData(page)
+
+  schoolInfoArray.push(cleanText($($(`td[colspan=56]`)[0]).text().split(' (')[0].trim()))
+  console.log(schoolInfoArray)
+
+  return schoolInfoArray
+
+}
+
+
 getSchools();
