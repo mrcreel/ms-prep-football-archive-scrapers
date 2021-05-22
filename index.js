@@ -28,15 +28,21 @@ const getData = async (page) => {
 const getSchools = async () => {
   const schoolsArray = []
   for (const page of pages) {
-    const $ = await getData(page);
+    let $ = await getData(page);
     console.log(`${BASE_URL}${page}`)
 
     const schoolCells = $('td[colspan=8] a')
 
-    for (let i = 0; i < schoolCells.length ; i++) {
+    for (let i = 0; i < 1/* schoolCells.length */ ; i++) {
+      const schoolInfo = {}
       const schoolSlug = cleanText($(schoolCells[i]).attr('href').split('.')[0])
-      console.log(schoolSlug)
-      schoolsArray.push(schoolSlug)
+      schoolInfo.schoolSlug = schoolSlug
+
+      console.log(`${BASE_URL}/Teams/${schoolSlug}.htm`)
+
+
+      console.log(schoolInfo)
+      schoolsArray.push(schoolInfo)
     }
     divider()
 
